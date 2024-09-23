@@ -1,0 +1,9 @@
+prefix: /project/gbru_wheat2/fhb/conda/primer3_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - snakemake
+  - primer3
+  - blast
