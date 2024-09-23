@@ -7,3 +7,5 @@ dependencies:
   - snakemake
   - primer3
   - blast
+  - ispcr
+  - ucsc-fatotwobit

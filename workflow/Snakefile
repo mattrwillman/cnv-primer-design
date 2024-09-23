@@ -1,0 +1,46 @@
+ASSEMBLIES = config['ASSEMBLIES']
+
+rule all:
+    input:
+        expand("results/Rht8.{assembly}.psl", assembly = ASSEMBLIES)
+
+rule primer3:
+    input:
+        "resources/Rht8_primer3_tags.txt"
+    output:
+        "results/Rht8_primer3_out.txt"
+    log:
+        "logs/Rht8_primer3_log.txt"
+    shell:
+        "primer3_core --output={output} --error={log} {input} 2> {log}"
+
+rule primer3_to_ispcr:
+    input:
+        "results/Rht8_primer3_out.txt"
+    output:
+        "results/Rht8_ispcr_input.txt"
+    log:
+        "logs/Rht8_primer3_to_fasta.txt"
+    shell:
+        "python workflow/scripts/primer3_to_ispcr.py {input} {output} 2> {log}"
+
+rule make_assembly_2bit:
+    input:
+        "resources/{assembly}.fasta"
+    output:
+        "results/{assembly}.2bit"
+    log:
+        "logs/{assembly}_2bit.txt"
+    shell:
+        "faToTwoBit {input} {output} 2> {log}"
+
+rule ispcr:
+    input:
+        database = "results/{assembly}.2bit", 
+        query = "results/Rht8_ispcr_input.txt"
+    output:
+        "results/Rht8.{assembly}.psl"
+    log:
+        "logs/isPcr_Rht8_{assembly}_log.txt"
+    shell:
+        "isPcr {input.database} {input.query} {output} -out=psl 2> {log}"
