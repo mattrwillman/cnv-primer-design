@@ -30,8 +30,10 @@ rule subset_chrs:
         "resources/{assembly}.fasta"
     output:
         "results/chrs/{assembly}.{chr}.fasta"
+    log:
+        "logs/subset_chr/{assembly}.{chr}.log"
     shell:
-        "seqkit grep -rp '{wildcards.chr}' {input} > {output}"
+        "seqkit grep -rp '{wildcards.chr}' {input} > {output} 2> {log}"
 
 #rule make_assembly_2bit:
 #    input:

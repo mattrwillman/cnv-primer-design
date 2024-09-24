@@ -9,3 +9,4 @@ dependencies:
   - blast
   - ispcr
   - ucsc-fatotwobit
+  - seqkit
