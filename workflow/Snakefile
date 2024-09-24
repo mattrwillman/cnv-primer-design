@@ -3,8 +3,7 @@ CHRS = config['CHRS']
 
 rule all:
     input:
-        expand("results/isPcrByChr/Rht8.{assembly}.{chr}.fa", assembly = ASSEMBLIES, chr = CHRS), 
-        expand("results/isPcrMerged/Rht8{assembly}.fa", assembly = ASSEMBLIES)
+        expand("results/isPcrMerged/Rht8_{assembly}.fa", assembly = ASSEMBLIES)
 
 rule primer3:
     input:
@@ -59,7 +58,7 @@ rule concat_ispcr:
     input:
         expand("results/isPcrByChr/Rht8.{{assembly}}.{chr}.fa", chr = CHRS)
     output:
-        "results/isPcrMerged/Rht8{assembly}.fa"
+        "results/isPcrMerged/Rht8_{assembly}.fa"
     log:
         "logs/isPcrMerge/Rht8_{assembly}.log"
     shell:
