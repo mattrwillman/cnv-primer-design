@@ -1,8 +1,10 @@
 ASSEMBLIES = config['ASSEMBLIES']
+CHRS = config['CHRS']
 
 rule all:
     input:
-        expand("results/Rht8.{assembly}.psl", assembly = ASSEMBLIES)
+        expand("results/isPcrByChr/Rht8.{assembly}.{chr}.fa", assembly = ASSEMBLIES, chr = CHRS), 
+        expand("results/isPcrMerged/Rht8{assembly}.fa", assembly = ASSEMBLIES)
 
 rule primer3:
     input:
@@ -10,9 +12,9 @@ rule primer3:
     output:
         "results/Rht8_primer3_out.txt"
     log:
-        "logs/Rht8_primer3_log.txt"
+        "logs/Rht8_primer3.log"
     shell:
-        "primer3_core --output={output} --error={log} {input} 2> {log}"
+        "primer3_core --output={output} --error={log} {input}"
 
 rule primer3_to_ispcr:
     input:
@@ -20,27 +22,45 @@ rule primer3_to_ispcr:
     output:
         "results/Rht8_ispcr_input.txt"
     log:
-        "logs/Rht8_primer3_to_fasta.txt"
+        "logs/Rht8_primer3_to_fasta.log"
     shell:
-        "python workflow/scripts/primer3_to_ispcr.py {input} {output} 2> {log}"
+        "python workflow/scripts/primer3_to_ispcr.py {input} {output} &> {log}"
 
-rule make_assembly_2bit:
+rule subset_chrs:
     input:
         "resources/{assembly}.fasta"
     output:
-        "results/{assembly}.2bit"
-    log:
-        "logs/{assembly}_2bit.txt"
+        "results/chrs/{assembly}.{chr}.fasta"
     shell:
-        "faToTwoBit {input} {output} -long 2> {log}"
+        "seqkit grep -rp '{wildcards.chr}' {input} > {output}"
 
-rule ispcr:
+#rule make_assembly_2bit:
+#    input:
+#        "resources/{assembly}.fasta"
+#    output:
+#        "results/{assembly}.2bit"
+#    log:
+#        "logs/{assembly}_2bit.log"
+#   shell:
+#        "faToTwoBit {input} {output} -long 2> {log}"
+
+rule ispcr_by_chr:
     input:
-        database = "results/{assembly}.2bit", 
+        database = "results/chrs/{assembly}.{chr}.fasta", 
         query = "results/Rht8_ispcr_input.txt"
     output:
-        "results/Rht8.{assembly}.psl"
+        "results/isPcrByChr/Rht8.{assembly}.{chr}.fa"
     log:
-        "logs/isPcr_Rht8_{assembly}_log.txt"
+        "logs/isPcrByChr/Rht8_{assembly}.{chr}.log"
     shell:
-        "workflow/scripts/isPcr {input.database} {input.query} {output} -out=psl 2> {log}"
+        "workflow/scripts/isPcr {input.database} {input.query} {output} 2> {log}"
+
+rule concat_ispcr:
+    input:
+        expand("results/isPcrByChr/Rht8.{{assembly}}.{chr}.fa", chr = CHRS)
+    output:
+        "results/isPcrMerged/Rht8{assembly}.fa"
+    log:
+        "logs/isPcrMerge/Rht8_{assembly}.log"
+    shell:
+        "cat {input} > {output} 2> {log}"
