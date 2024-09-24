@@ -32,7 +32,7 @@ rule make_assembly_2bit:
     log:
         "logs/{assembly}_2bit.txt"
     shell:
-        "faToTwoBit {input} {output} 2> {log}"
+        "faToTwoBit {input} {output} -long 2> {log}"
 
 rule ispcr:
     input:
