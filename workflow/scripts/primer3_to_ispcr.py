@@ -1,67 +1,63 @@
 import argparse
 
-def extract_primer_sequences(primer3_output_file):
-    """
-    Extracts forward, reverse, and internal probe sequences from Primer3 output.
-    
-    :param primer3_output_file: Path to the Primer3 output file
-    :return: List of tuples (forward_primer, reverse_primer, internal_probe)
-    """
-    primers = []
-    forward_primer = None
-    reverse_primer = None
-    internal_probe = None
+def parse_primer3_output(primer3_file):
+    """Parses the Primer3 output file to extract multiple forward and reverse primer sequences."""
+    primers = {}
+    seq_id = None
 
-    # Read the Primer3 output file
-    with open(primer3_output_file, 'r') as file:
+    with open(primer3_file, 'r') as file:
         for line in file:
-            if line.startswith("PRIMER_LEFT_") and "_SEQUENCE=" in line:
-                _, forward_primer = line.strip().split('=')
-            elif line.startswith("PRIMER_RIGHT_") and "_SEQUENCE=" in line:
-                _, reverse_primer = line.strip().split('=')
-            elif line.startswith("PRIMER_INTERNAL_") and "_SEQUENCE=" in line:
-                _, internal_probe = line.strip().split('=')
-
-            # When all three sequences are found, add them to the list
-            if forward_primer and reverse_primer and internal_probe:
-                primers.append((forward_primer, reverse_primer, internal_probe))
-                forward_primer = None
-                reverse_primer = None
-                internal_probe = None
+            line = line.strip()
+            
+            # Parse SEQUENCE_ID
+            if line.startswith("SEQUENCE_ID="):
+                seq_id = line.split("=")[1]
+                if seq_id not in primers:
+                    primers[seq_id] = []
+            
+            # Only process lines that contain primer sequences (those containing _SEQUENCE=)
+            if "PRIMER_LEFT_" in line and "_SEQUENCE=" in line:
+                # Extract the primer index from the key
+                primer_index = line.split('_')[2].split('_')[0]
+                forward_primer = line.split("=")[1]
+                
+                # Ensure the list has room for this primer index
+                while len(primers[seq_id]) <= int(primer_index):
+                    primers[seq_id].append({'forward': '', 'reverse': ''})
+                
+                primers[seq_id][int(primer_index)]['forward'] = forward_primer
+            
+            if "PRIMER_RIGHT_" in line and "_SEQUENCE=" in line:
+                primer_index = line.split('_')[2].split('_')[0]
+                reverse_primer = line.split("=")[1]
+                
+                # Ensure the list has room for this primer index
+                while len(primers[seq_id]) <= int(primer_index):
+                    primers[seq_id].append({'forward': '', 'reverse': ''})
+                
+                primers[seq_id][int(primer_index)]['reverse'] = reverse_primer
 
     return primers
 
-def write_to_ispcr_format(primer_sequences, ispcr_output_file, max_product_size=None):
-    """
-    Writes the extracted primer sequences in IS-PCR format.
-
-    :param primer_sequences: List of tuples (forward_primer, reverse_primer, internal_probe)
-    :param ispcr_output_file: Path to the output file for IS-PCR
-    :param max_product_size: Maximum product size for IS-PCR (optional)
-    """
-    with open(ispcr_output_file, 'w') as ispcr_file:
-        for forward_primer, reverse_primer, internal_probe in primer_sequences:
-            if max_product_size:
-                ispcr_file.write(f"{forward_primer} {reverse_primer} {internal_probe} {max_product_size}\n")
-            else:
-                ispcr_file.write(f"{forward_primer} {reverse_primer} {internal_probe}\n")
+def write_ispcr_input(primers, ispcr_file):
+    """Writes the ISPCR input format from the parsed Primer3 primers."""
+    with open(ispcr_file, 'w') as file:
+        for seq_id, primer_pairs in primers.items():
+            for idx, primer_data in enumerate(primer_pairs):
+                file.write(f"{seq_id}_pair{idx+1} {primer_data['forward']} {primer_data['reverse']}\n")
 
 def main():
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description="Convert Primer3 output to IS-PCR input format.")
-    parser.add_argument("input", help="Primer3 output file")
-    parser.add_argument("output", help="IS-PCR input file")
-    parser.add_argument("--max_product_size", type=int, help="Maximum product size (optional)", default=None)
-    
+    parser = argparse.ArgumentParser(description="Convert Primer3 output to ISPCR input format with multiple primer pairs")
+    parser.add_argument('primer3_output', help="The Primer3 output file")
+    parser.add_argument('ispcr_input', help="The output file for ISPCR")
+
     args = parser.parse_args()
 
-    # Extract primer sequences from the Primer3 output
-    primers = extract_primer_sequences(args.input)
+    # Parse Primer3 output file
+    primers = parse_primer3_output(args.primer3_output)
 
-    # Write the IS-PCR input file
-    write_to_ispcr_format(primers, args.output, args.max_product_size)
-
-    print(f"IS-PCR input file created: {args.output}")
+    # Write to ISPCR input format
+    write_ispcr_input(primers, args.ispcr_input)
 
 if __name__ == "__main__":
     main()

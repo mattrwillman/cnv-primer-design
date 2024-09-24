@@ -43,4 +43,4 @@ rule ispcr:
     log:
         "logs/isPcr_Rht8_{assembly}_log.txt"
     shell:
-        "isPcr {input.database} {input.query} {output} -out=psl 2> {log}"
+        "workflow/scripts/isPcr {input.database} {input.query} {output} -out=psl 2> {log}"
