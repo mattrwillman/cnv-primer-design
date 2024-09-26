@@ -10,3 +10,5 @@ dependencies:
   - ispcr
   - ucsc-fatotwobit
   - seqkit
+  - blast
+  

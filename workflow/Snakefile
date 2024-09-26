@@ -1,3 +1,7 @@
+# To do:
+# Change 'Rht8' to variable defined in config
+# BLAST isPcr products to check for probe?
+
 ASSEMBLIES = config['ASSEMBLIES']
 CHRS = config['CHRS']
 
