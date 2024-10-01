@@ -1,31 +1,32 @@
 # To do:
-# Change 'Rht8' to variable defined in config
 # BLAST isPcr products to check for probe?
+# Run with BUSCO CNVs
 
+TAG_SETS = config['TAGS']
 ASSEMBLIES = config['ASSEMBLIES']
 CHRS = config['CHRS']
 
 rule all:
     input:
-        expand("results/isPcrMerged/Rht8_{assembly}.fa", assembly = ASSEMBLIES)
+        expand("results/isPcrMerged/{tag}_{assembly}.fa", tag = TAG_SETS, assembly = ASSEMBLIES)
 
 rule primer3:
     input:
-        "resources/Rht8_primer3_tags.txt"
+        "resources/{tag}_primer3_tags.txt"
     output:
-        "results/Rht8_primer3_out.txt"
+        "results/{tag}_primer3_out.txt"
     log:
-        "logs/Rht8_primer3.log"
+        "logs/{tag}_primer3.log"
     shell:
         "primer3_core --output={output} --error={log} {input}"
 
 rule primer3_to_ispcr:
     input:
-        "results/Rht8_primer3_out.txt"
+        "results/{tag}_primer3_out.txt"
     output:
-        "results/Rht8_ispcr_input.txt"
+        "results/{tag}_ispcr_input.txt"
     log:
-        "logs/Rht8_primer3_to_fasta.log"
+        "logs/{tag}_primer3_to_fasta.log"
     shell:
         "python workflow/scripts/primer3_to_ispcr.py {input} {output} &> {log}"
 
@@ -52,20 +53,20 @@ rule subset_chrs:
 rule ispcr_by_chr:
     input:
         database = "results/chrs/{assembly}.{chr}.fasta", 
-        query = "results/Rht8_ispcr_input.txt"
+        query = "results/{tag}_ispcr_input.txt"
     output:
-        "results/isPcrByChr/Rht8.{assembly}.{chr}.fa"
+        "results/isPcrByChr/{tag}.{assembly}.{chr}.fa"
     log:
-        "logs/isPcrByChr/Rht8_{assembly}.{chr}.log"
+        "logs/isPcrByChr/{tag}_{assembly}.{chr}.log"
     shell:
         "workflow/scripts/isPcr {input.database} {input.query} {output} 2> {log}"
 
 rule concat_ispcr:
     input:
-        expand("results/isPcrByChr/Rht8.{{assembly}}.{chr}.fa", chr = CHRS)
+        expand("results/isPcrByChr/{{tag}}.{{assembly}}.{chr}.fa", chr = CHRS)
     output:
-        "results/isPcrMerged/Rht8_{assembly}.fa"
+        "results/isPcrMerged/{tag}_{assembly}.fa"
     log:
-        "logs/isPcrMerge/Rht8_{assembly}.log"
+        "logs/isPcrMerge/{tag}_{assembly}.log"
     shell:
         "cat {input} > {output} 2> {log}"
