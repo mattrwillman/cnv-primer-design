@@ -1,5 +1,6 @@
 # To do:
 # BLAST isPcr products to check for probe?
+# Organize output
 # Run with BUSCO CNVs
 
 TAG_SETS = config['TAGS']
@@ -39,16 +40,6 @@ rule subset_chrs:
         "logs/subset_chr/{assembly}.{chr}.log"
     shell:
         "seqkit grep -rp '{wildcards.chr}' {input} > {output} 2> {log}"
-
-#rule make_assembly_2bit:
-#    input:
-#        "resources/{assembly}.fasta"
-#    output:
-#        "results/{assembly}.2bit"
-#    log:
-#        "logs/{assembly}_2bit.log"
-#   shell:
-#        "faToTwoBit {input} {output} -long 2> {log}"
 
 rule ispcr_by_chr:
     input:
