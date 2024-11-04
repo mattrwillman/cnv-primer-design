@@ -1,8 +1,11 @@
 TAGS:
   - "Rht8"
+  - "busco"
+
 ASSEMBLIES:
-  - "AGS2000.MW.scaffold"
-  - "Hilliard.MW.scaffold"
+  - "AGS2000"
+  - "Hilliard"
+  
 CHRS:
   - "1A"
   - "1B"
