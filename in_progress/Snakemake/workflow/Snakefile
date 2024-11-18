@@ -1,0 +1,80 @@
+ASSEMBLIES = config['ASSEMBLIES']
+ASSEMBLY_FASTAS = config['ASSEMBLY_FASTAS']
+IDS_FILE = "resources/intersecting_IDs.txt"
+
+with open(IDS_FILE) as f:
+    IDS = [line.strip() for line in f]
+
+rule all:
+    input:
+        "results/primer3_consensus_tags_full.txt"
+
+rule seq_from_bed:
+    input:
+        ref = "resources/{assembly}.scaffold.fasta", 
+        bed = "resources/CNV_{assembly}Ref.bed"
+    output:
+        fasta = "results/cnv_by_assembly/CNV_{assembly}.fasta"
+    shell:
+        "bedtools getfasta -fi {input.ref} -bed {input.bed} -name | seqkit sort > {output.fasta}"
+
+rule extract_fasta_by_id:
+    input:
+        fasta1 = expand("results/cnv_by_assembly/CNV_{assembly}.fasta", assembly = ASSEMBLIES)[0],  
+        fasta2 = expand("results/cnv_by_assembly/CNV_{assembly}.fasta", assembly = ASSEMBLIES)[1], 
+        ids_file=IDS_FILE
+    output:
+        fasta = "results/seqs_by_id/id_{id}.fasta"
+    params:
+        id = "{id}"
+    shell:
+        """
+            seqkit grep -rp "{params.id}::" {input.fasta1} > {output.fasta}
+            seqkit grep -rp "{params.id}::" {input.fasta2} >> {output.fasta}
+        """
+
+rule clustal:
+    input:
+        fasta = "results/seqs_by_id/id_{id}.fasta"
+    output:
+        clustal = "results/clustal_by_id/id_{id}.aln"
+    log:
+        "logs/clustal_{id}.log"
+    shell:
+        "clustalw -type=DNA -infile={input} -outfile={output} > {log}"
+
+rule extract_consensus_from_clustal:
+    input:
+        "results/clustal_by_id/id_{id}.aln"
+    output:
+        "results/clustal_consensus_by_id/consensus_{id}.fasta"
+    shell:
+        "python workflow/scripts/generate_consensus.py {input} {output}"
+
+rule make_primer3_tags:
+    input:
+        "results/clustal_consensus_by_id/consensus_{id}.fasta"
+    output:
+        "results/primer3_tags_by_id/primer3_tag_{id}.txt"
+    params:
+        id = "{id}"
+    shell:
+        """
+            echo "SEQUENCE_ID={params.id}" > {output}
+            echo "SEQUENCE_TEMPLATE=$(tail -n1 consensus_{{id}}.fasta)" >> {output}
+            echo "PRIMER_TASK=generic" >> {output}
+            echo "PRIMER_PICK_LEFT_PRIMER=1" >> {output}
+            echo "PRIMER_PICK_INTERNAL_OLIGO=1" >> {output}
+            echo "PRIMER_PICK_RIGHT_PRIMER=1" >> {output}
+            echo "PRIMER_EXPLAIN_FLAG=1" >> {output}
+            echo "=" >> {output}
+        """
+
+rule concat_primer3_tags:
+    input:
+        expand("results/primer3_tags_by_id/primer3_tag_{id}.txt", id = IDS)
+    output:
+        "results/primer3_consensus_tags_full.txt"
+    shell:
+        "cat {input} {output}"
+

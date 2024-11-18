@@ -1,0 +1,6 @@
+ASSEMBLIES: 
+  - "Hilliard"
+  - "AGS2000"
+ASSEMBLY_FASTAS:
+  - "resources/Hilliard.scaffold.fasta"
+  - "resources/AGS2000.scaffold.fasta"

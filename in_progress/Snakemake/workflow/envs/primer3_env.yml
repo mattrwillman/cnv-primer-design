@@ -8,6 +8,7 @@ dependencies:
   - primer3
   - blast
   - ispcr
-  - ucsc-fatotwobit
   - seqkit
+  - clustalw
+  - bedtools
   
