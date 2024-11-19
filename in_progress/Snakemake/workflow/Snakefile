@@ -76,5 +76,5 @@ rule concat_primer3_tags:
     output:
         "results/primer3_consensus_tags_full.txt"
     shell:
-        "cat {input} {output}"
+        "cat {input} > {output}"
 
