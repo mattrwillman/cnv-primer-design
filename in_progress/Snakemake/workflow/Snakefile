@@ -61,7 +61,7 @@ rule make_primer3_tags:
     shell:
         """
             echo "SEQUENCE_ID={params.id}" > {output}
-            echo "SEQUENCE_TEMPLATE=$(tail -n1 consensus_{{id}}.fasta)" >> {output}
+            echo "SEQUENCE_TEMPLATE=$(tail -n1 {input})" >> {output}
             echo "PRIMER_TASK=generic" >> {output}
             echo "PRIMER_PICK_LEFT_PRIMER=1" >> {output}
             echo "PRIMER_PICK_INTERNAL_OLIGO=1" >> {output}
