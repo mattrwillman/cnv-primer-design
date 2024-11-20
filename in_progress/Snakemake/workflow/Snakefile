@@ -1,5 +1,6 @@
 ASSEMBLIES = config['ASSEMBLIES']
-ASSEMBLY_FASTAS = config['ASSEMBLY_FASTAS']
+#ASSEMBLY_FASTAS = config['ASSEMBLY_FASTAS']
+CHRS = config['CHRS']
 IDS_FILE = "resources/intersecting_IDs.txt"
 
 with open(IDS_FILE) as f:
@@ -78,3 +79,53 @@ rule concat_primer3_tags:
     shell:
         "cat {input} > {output}"
 
+rule primer3:
+    input:
+        "results/primer3_consensus_tags_full.txt"
+    output:
+        "results/primer3_out.txt"
+    log:
+        "logs/primer3.log"
+    shell:
+        "primer3_core --output={output} --error={log} {input}"
+
+rule primer3_to_ispcr:
+    input:
+        "results/primer3_out.txt"
+    output:
+        "results/ispcr_input.txt"
+    log:
+        "logs/primer3_to_fasta.log"
+    shell:
+        "python workflow/scripts/primer3_to_ispcr.py {input} {output} &> {log}"
+
+rule subset_chrs:
+    input:
+        "resources/{assembly}.scaffold.fasta"
+    output:
+        "results/chrs/{assembly}.{chr}.fasta"
+    log:
+        "logs/subset_chr/{assembly}.{chr}.log"
+    shell:
+        "seqkit grep -rp '{wildcards.chr}' {input} > {output} 2> {log}"
+
+rule ispcr_by_chr:
+    input:
+        database = "results/chrs/{assembly}.{chr}.fasta", 
+        query = "results/ispcr_input.txt"
+    output:
+        "results/isPcrByChr/{assembly}.{chr}.fa"
+    log:
+        "logs/isPcrByChr/{assembly}.{chr}.log"
+    shell:
+        "workflow/scripts/isPcr {input.database} {input.query} {output} 2> {log}"
+
+rule concat_ispcr:
+    input:
+        expand("results/isPcrByChr/{{assembly}}.{chr}.fa", chr = CHRS)
+    output:
+        "results/isPcrMerged/{assembly}.fa"
+    log:
+        "logs/isPcrMerge/{assembly}.log"
+    shell:
+        "cat {input} > {output} 2> {log}"
