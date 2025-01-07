@@ -8,7 +8,9 @@ with open(IDS_FILE) as f:
 
 rule all:
     input:
-        "results/primer3_consensus_tags_full.txt"
+        "results/primer3_consensus_tags_full.txt", 
+        expand("results/isPcrMerged/{assembly}.fa", assembly = ASSEMBLIES), 
+        "results/isPcrMerged/{assembly}_hit_counts.txt"
 
 rule seq_from_bed:
     input:
@@ -129,3 +131,11 @@ rule concat_ispcr:
         "logs/isPcrMerge/{assembly}.log"
     shell:
         "cat {input} > {output} 2> {log}"
+
+rule count_ispcr_hits:
+    input:
+        "results/isPcrMerged/{assembly}.fa"
+    output:
+        "results/isPcrMerged/{assembly}_hit_counts.txt"
+    shell:
+        "grep '^>' {input} | cut -d ' ' -f2 | sort | uniq -c > {output}"
