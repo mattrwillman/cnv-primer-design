@@ -141,24 +141,12 @@ rule count_ispcr_hits:
     shell:
         "grep '^>' {input} | cut -d ' ' -f2 | sort | uniq -c > {output}"
 
-#Extra
-rule primer3_format_output:
-    input:
-        "results/primer3_consensus_tags_full.txt"
-    output:
-        "results/primer3_out_userformat.txt"
-    log:
-        "logs/primer3_userformat.log"
-    shell:
-        "primer3_core --format_output --output={output} --error={log} {input}"
-
-#Extra
-rule primer3_to_table6:
+rule parse_primer3_output:
     input:
         "results/primer3_out.txt"
     output:
         "results/primer3_table.csv"
     log:
-        "logs/primer3_to_table6.log"
+        "logs/primer3_table.log"
     shell:
         "python workflow/scripts/parse_primer3_output.py {input} {output} &> {log}"
